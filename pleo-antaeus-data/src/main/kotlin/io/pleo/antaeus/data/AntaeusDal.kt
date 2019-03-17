@@ -12,10 +12,7 @@ import io.pleo.antaeus.models.Customer
 import io.pleo.antaeus.models.Invoice
 import io.pleo.antaeus.models.InvoiceStatus
 import io.pleo.antaeus.models.Money
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class AntaeusDal(private val db: Database) {
@@ -60,6 +57,20 @@ class AntaeusDal(private val db: Database) {
         }
 
         return fetchInvoice(id!!)
+    }
+
+    /**
+     * Function to update an invoice on the DB.
+     * Only the attributes value, currency and status are updated, as the attributes id and customerId should never change
+     */
+    fun updateInvoice(invoice: Invoice){
+        transaction(db){
+            InvoiceTable.update({InvoiceTable.id eq invoice.id}){
+                it[this.value] = invoice.amount.value
+                it[this.currency] = invoice.amount.currency.toString()
+                it[this.status] = invoice.status.toString()
+            }
+        }
     }
 
     fun fetchCustomer(id: Int): Customer? {

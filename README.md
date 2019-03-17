@@ -1,11 +1,36 @@
 
 ## Work notes - Paulo Unia
+
+First work session - Sunday - 2h
+
 I have never used Kotlin before, however I work with Java quite often so it feels really familiar. 
+
 This morning I started learning more about Kotlin and Exposed, playing around with the project and the DB.
+
 So far I got a good understanding of the existing codebase, it's now time to plan the enhancements.
+
 First commit: Added a function to fetch pending invoices only.
 
+---
 
+Second work session - Sunday - 2h
+
+Started working on the BillingService. Before actually doing any logic, I decided to add the Kotlin version of Log4J
+so I could easily output information while working. 
+
+Once I started working on the function to handle each individual invoice, I realized that it would be important to capture
+all the different states an invoice could be on, so I added these new statuses to the InvoiceStatus enum: 
+* NETWORK_ERROR
+* MISSING_FUNDS
+* ERROR
+
+As of now, I have a simple version of the code that handles all "simple" transactions (no exceptions occur). Next steps
+are to do some unit testing and update the mock of PaymentProvider in order to have it throw exceptions from time to time.
+
+I will also need to update the seeds to insert discrepancies between the customer's currency and the invoice's currency,
+so I can apply corrective measures during the invoice handing process when necessary.
+
+---
 
 ## Antaeus
 
