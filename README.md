@@ -1,3 +1,12 @@
+
+## Work notes - Paulo Unia
+I have never used Kotlin before, however I work with Java quite often so it feels really familiar. 
+This morning I started learning more about Kotlin and Exposed, playing around with the project and the DB.
+So far I got a good understanding of the existing codebase, it's now time to plan the enhancements.
+First commit: Added a function to fetch pending invoices only.
+
+
+
 ## Antaeus
 
 Antaeus (/ænˈtiːəs/), in Greek mythology, a giant of Libya, the son of the sea god Poseidon and the Earth goddess Gaia. He compelled all strangers who were passing through the country to wrestle with him. Whenever Antaeus touched the Earth (his mother), his strength was renewed, so that even if thrown to the ground, he was invincible. Heracles, in combat with him, discovered the source of his strength and, lifting him up from Earth, crushed him to death.
@@ -53,3 +62,5 @@ Happy hacking 😁!
 * [kotlin-logging](https://github.com/MicroUtils/kotlin-logging) - Simple logging framework for Kotlin
 * [JUnit 5](https://junit.org/junit5/) - Testing framework
 * [Mockk](https://mockk.io/) - Mocking library
+
+
