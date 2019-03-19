@@ -9,6 +9,7 @@ package io.pleo.antaeus.app
 
 import getPaymentProvider
 import io.pleo.antaeus.core.services.BillingService
+import io.pleo.antaeus.core.services.CurrencyService
 import io.pleo.antaeus.core.services.CustomerService
 import io.pleo.antaeus.core.services.InvoiceService
 import io.pleo.antaeus.data.AntaeusDal
@@ -48,15 +49,22 @@ fun main() {
     // Insert example data in the database.
     setupInitialData(dal = dal)
 
-    // Get third parties
-    val paymentProvider = getPaymentProvider()
 
     // Create core services
     val invoiceService = InvoiceService(dal = dal)
     val customerService = CustomerService(dal = dal)
+    val currencyService = CurrencyService()
+
+    // Get third parties
+    // Note: We pass the customerService to the external as I want the mock to throw the CurrencyMismatchException
+    //      when the currencies don't match
+    val paymentProvider = getPaymentProvider(customerService)
+
+
 
     // This is _your_ billing service to be included where you see fit
-    val billingService = BillingService(paymentProvider = paymentProvider,customerService = customerService,invoiceService = invoiceService)
+    val billingService = BillingService(paymentProvider = paymentProvider,
+            customerService = customerService,invoiceService = invoiceService, currencyService = currencyService )
 
     // Create REST web service
     AntaeusRest(

@@ -32,6 +32,28 @@ so I can apply corrective measures during the invoice handing process when neces
 
 ---
 
+Third work session - Monday - 3h
+
+Things started to get very interesting as my understanding of Kotlin grows!
+
+For today, I decided to complexify the situations that can arise during the payment of the invoice, so I changed the 
+PaymentProvider provided in the base code for a full class, where I added some logic to throw currency and network exceptions, 
+I also added some randomness to the result of the transaction (success or missing funds).
+
+To keep track of how the processing went, I decided to add some logs at the end of the handling process to have
+an overall view of the results.
+
+Since the new PaymentProvider could throw currency exceptions, I also updated the setupInitialData function to generate
+invoices where the currency is different than the customer's currency, so we cover all possible cases.
+
+Once I started having currency exceptions, I introduced a CurrencyService in order to modify the invoices
+to match the customer's currency.
+
+Finally, I also added a retry mechanism so we retry once the processing for all the invoices that got a network exception
+
+Next steps would be to add some unit testing, followed by some sort of scheduling system to initiate the invoice handling
+process on the 1st of each month.
+
 ## Antaeus
 
 Antaeus (/ænˈtiːəs/), in Greek mythology, a giant of Libya, the son of the sea god Poseidon and the Earth goddess Gaia. He compelled all strangers who were passing through the country to wrestle with him. Whenever Antaeus touched the Earth (his mother), his strength was renewed, so that even if thrown to the ground, he was invincible. Heracles, in combat with him, discovered the source of his strength and, lifting him up from Earth, crushed him to death.

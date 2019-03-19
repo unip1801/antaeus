@@ -22,8 +22,36 @@ class InvoiceService(private val dal: AntaeusDal) {
         return dal.fetchInvoices(InvoiceStatus.PENDING)
     }
 
+    fun fetchInvoicesToHandle():List<Invoice>{
+        return dal.fetchInvoicesToHandle()
+    }
+
     fun updateInvoice(invoice: Invoice){
         dal.updateInvoice(invoice)
+    }
+
+    fun getAllInvoicesCount(): Int{
+        return dal.fetchInvoiceCount()
+    }
+
+    fun getPendingInvoicesCount(): Int{
+        return dal.fetchInvoiceCount(InvoiceStatus.PENDING)
+    }
+
+    fun getErrorInvoicesCount(): Int{
+        return dal.fetchInvoiceCount(InvoiceStatus.ERROR)
+    }
+
+    fun getNetworkErrorInvoicesCount(): Int{
+        return dal.fetchInvoiceCount(InvoiceStatus.NETWORK_ERROR)
+    }
+
+    fun getMissingFundsInvoicesCount(): Int{
+        return dal.fetchInvoiceCount(InvoiceStatus.MISSING_FUNDS)
+    }
+
+    fun getPaidInvoicesCount(): Int{
+        return dal.fetchInvoiceCount(InvoiceStatus.PAID)
     }
 
 }
