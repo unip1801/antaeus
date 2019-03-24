@@ -2,6 +2,7 @@ package io.pleo.antaeus.core.services
 import io.pleo.antaeus.models.Currency
 import io.pleo.antaeus.models.Invoice
 import io.pleo.antaeus.models.Money
+import java.math.BigDecimal
 
 
 /**
@@ -14,10 +15,10 @@ import io.pleo.antaeus.models.Money
 class CurrencyService {
 
 
-    private val eurValue: Double = 1.13
-    private val dkkValue: Double = 0.15
-    private val sekValue: Double = 0.11
-    private val gbpValue: Double = 1.33
+    private val eurValue = BigDecimal(1.13)
+    private val dkkValue = BigDecimal(0.15)
+    private val sekValue = BigDecimal(0.11)
+    private val gbpValue = BigDecimal(1.33)
 
 
     /**
@@ -32,10 +33,10 @@ class CurrencyService {
             return invoice
 
         //Else, we start by converting the invoice value to USD
-        val usdValue = convertToUsd(invoice.amount.value.toDouble(), invoice.amount.currency)
+        val usdValue = convertToUsd(invoice.amount.value, invoice.amount.currency)
 
         //Then we convert USD to the final desired value
-        val finalValue = convertUsdTo(usdValue,currency).toBigDecimal()
+        val finalValue = convertUsdTo(usdValue,currency)
 
         //Now we create a new instance of the invoice and we return it
         // NOTE: Be cautios here, this new invoice instance is not saved in the DB
@@ -50,7 +51,7 @@ class CurrencyService {
      * @param originalCurrency the currency to convert from
      * @return the value converted to USD$
      */
-    private fun convertToUsd(value: Double, originalCurrency: Currency): Double =
+    private fun convertToUsd(value: BigDecimal, originalCurrency: Currency): BigDecimal =
         when(originalCurrency){
             Currency.EUR -> value*eurValue
             Currency.USD -> value
@@ -66,7 +67,7 @@ class CurrencyService {
      * @param finalCurrency the target currency
      * @return the usd value converted to the expected currency
      */
-    private fun convertUsdTo(value: Double, finalCurrency: Currency): Double =
+    private fun convertUsdTo(value: BigDecimal, finalCurrency: Currency): BigDecimal =
         when(finalCurrency){
             Currency.EUR -> value/eurValue
             Currency.USD -> value

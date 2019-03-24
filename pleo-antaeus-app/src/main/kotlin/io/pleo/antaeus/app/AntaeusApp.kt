@@ -66,6 +66,9 @@ fun main() {
     val billingService = BillingService(paymentProvider = paymentProvider,
             customerService = customerService,invoiceService = invoiceService, currencyService = currencyService )
 
+    //Start the billing service
+    billingService.start()
+
     // Create REST web service
     AntaeusRest(
         invoiceService = invoiceService,

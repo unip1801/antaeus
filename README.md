@@ -54,6 +54,26 @@ Finally, I also added a retry mechanism so we retry once the processing for all 
 Next steps would be to add some unit testing, followed by some sort of scheduling system to initiate the invoice handling
 process on the 1st of each month.
 
+
+---
+
+Fourth working session - Sunday - 4h
+
+I had a very busy week at work and at my administration committee, so wasn't able to continue after monday session.
+
+Today I added some testing for the currency service and worked on the scheduling.
+
+The basic idea behind the scheduling is to use a thread that will be asleep until the first day of next month.
+The objective in fact would be to set the base for have enough flexibility so in the future it would be easy to
+have several pay dates instead of just one (i.e. payments each week or each two weeks, payment on specific day of month
+ for some users, etc). I used the coroutines library from Kotlin to achieve these results
+ 
+ I added a new helper, the DateHelper, in order to regroup all the functions related to date/datetime needed for the
+ business logic
+ 
+ I also added some new routes in the API in order to start and stop the billing service thread, as well as get the status. 
+ Normally this would be behind a protected API, but for the purpose of this POC the authentication is not needed.
+
 ## Antaeus
 
 Antaeus (/ænˈtiːəs/), in Greek mythology, a giant of Libya, the son of the sea god Poseidon and the Earth goddess Gaia. He compelled all strangers who were passing through the country to wrestle with him. Whenever Antaeus touched the Earth (his mother), his strength was renewed, so that even if thrown to the ground, he was invincible. Heracles, in combat with him, discovered the source of his strength and, lifting him up from Earth, crushed him to death.

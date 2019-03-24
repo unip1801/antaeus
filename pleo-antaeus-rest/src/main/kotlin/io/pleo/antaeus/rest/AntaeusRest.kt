@@ -54,6 +54,36 @@ class AntaeusRest (
                // V1
                path("v1") {
 
+                   path("billingservice") {
+
+                       // Endpoint to start the billingservice thread
+                       // URL: /rest/v1/billingservice/start
+                       get("start"){
+                           it.json(billingService.start())
+                       }
+
+                       // Endpoint to stop the billingservice thread
+                       // URL: /rest/v1/billingservice/stop
+                       get("stop"){
+                           it.json( billingService.stop())
+                       }
+
+                       // Endpoint to get the billingservice thread status
+                       // URL: /rest/v1/billingservice/status
+                       get("status"){
+                           it.json(billingService.status())
+                       }
+
+                       // Endpoint to force invoice handling even if we're not the first of the month
+                       // URL: /rest/v1/billingservice/status
+                       get("forceinvoicehandling"){
+                           it.json(billingService.status())
+                       }
+
+                   }
+
+
+
                    // URL: /rest/v1/handlePendingInvoices
                    get("handlependinginvoices"){
                         billingService.handlePayments()
