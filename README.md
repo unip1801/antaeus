@@ -74,7 +74,6 @@ have several pay dates instead of just one (i.e. payments each week or each two 
  I also added some new routes in the API in order to start and stop the billing service thread, as well as get the status. 
  Normally this would be behind a protected API, but for the purpose of this POC the authentication is not needed.
 
----
 
 Fifth working session - Sunday - 1h
 
@@ -83,6 +82,20 @@ I also added an endpoint to reset the status of all invoices in error to pending
 
 To do so, I had to refactor the BillingService in order to return the processed invoices, I also added a verification
 so we don't ever process invoices that were already paid.
+
+
+Sixth working session - Sunday - 0.5h
+
+I realized that with my implementation of the BillingService and the rest API there was the possibility to have
+concurrent access issues. Technically speaking, someone could trigger the payment of an invoice manually through the API
+at the same time that the BillingService is handling the invoices. Since these would be loaded into memory already,
+if the payment through the API was made before the BillingService thread would handle the same invoice, we would end up
+requesting two payments for the same invoice.
+
+In order to prevent the problem, I used a lock on the BillingService. The implementation is quite simple and works well,
+however it wouldn't be scalable for systems where there are tenths of thousands of invoices being handled on the same day. 
+In that case, we should implement a lock that locks each invoice instead of locking all the invoices.
+
 
 
 

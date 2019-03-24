@@ -9,6 +9,7 @@ import io.pleo.antaeus.models.Invoice
 import io.pleo.antaeus.models.InvoiceStatus
 import kotlinx.coroutines.*
 import org.apache.logging.log4j.kotlin.Logging
+import java.util.concurrent.locks.ReentrantLock
 
 /**
  * This service is in charge of handling the billing, so processing the invoices
@@ -37,6 +38,13 @@ class BillingService(
     private var invoiceCurrencyUpdatedCount = 0
     private var thread : Job? = null
     private var threadShouldRun : Boolean = false
+
+    //Since the BillingService is in a thread separate to the rest of the program, technically someone
+    // could try to update an invoice through the REST API at the same time that the BillingService is working
+    // On the invoices, so we could end-up requesting two payments for the same invoice. This lock will
+    // help us ensure that only the REST API or the BillingService thread is accessing the invoices to prevent
+    // concurrent access errors.
+    private val invoicesLock = ReentrantLock()
 
 
     /**
@@ -155,6 +163,10 @@ class BillingService(
 
         logger.info("Entering the HandlePayments function")
 
+        //Getting the lock for the invoices
+        invoicesLock.lock()
+        logger.info("Got the invoice lock")
+
         //Get the invoice counts before, so we can do the diff at the end
         val allInvoicesCount = invoiceService.getAllInvoicesCount()
         val paidInvoiceCount = invoiceService.getPaidInvoicesCount()
@@ -216,6 +228,10 @@ class BillingService(
         logger.info("A total of $missingFundsInvoiceCountDiff invoices weren't paid because of low costumer balance.")
         logger.info("A total of $invoiceCurrencyUpdatedCount invoices had their currency updated to match the customer's currency")
 
+
+        invoicesLock.unlock()
+        logger.debug("Unlocked the invoice lock")
+
         return updatedInvoices
 
     }
@@ -228,11 +244,17 @@ class BillingService(
      */
     fun handleInvoice(invoiceId: Int): Invoice
     {
-        logger.info("Handling individual invoice. Id: $invoiceId")
+        //Getting the lock for the invoices
+        invoicesLock.lock()
+        logger.info("Handle individual invoice - got the invoice lock. Id: $invoiceId\"")
 
-        val invoice = invoiceService.fetch(invoiceId)
+        val invoice = processInvoice(invoiceService.fetch(invoiceId))
 
-        return processInvoice(invoice)
+        //Giving the lock back
+        invoicesLock.unlock()
+        logger.debug("Unlocked the invoice lock")
+
+        return invoice
 
     }
 
