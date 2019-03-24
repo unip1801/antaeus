@@ -20,7 +20,7 @@ class DateHelper{
          */
         fun isFirstOfTheMonth():Boolean{
             val currentDate = Calendar.getInstance()
-            return (currentDate.get(Calendar.DAY_OF_MONTH) == 24)
+            return (currentDate.get(Calendar.DAY_OF_MONTH) == 1)
         }
 
         /**

@@ -11,6 +11,7 @@ import io.pleo.antaeus.core.exceptions.EntityNotFoundException
 import io.pleo.antaeus.core.services.BillingService
 import io.pleo.antaeus.core.services.CustomerService
 import io.pleo.antaeus.core.services.InvoiceService
+import io.pleo.antaeus.models.InvoiceStatus
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -75,19 +76,17 @@ class AntaeusRest (
                        }
 
                        // Endpoint to force invoice handling even if we're not the first of the month
-                       // URL: /rest/v1/billingservice/status
-                       get("forceinvoicehandling"){
-                           it.json(billingService.status())
+                       // URL: /rest/v1/billingservice/invoicehandling
+                       get("payallinvoices"){
+                           it.json(billingService.handlePayments())
                        }
 
-                   }
+                       // Endpoint to force individual invoice handling even if we're not the first of the month
+                       // URL: /rest/v1/billingservice/invoicehandling
+                       get("payinvoice/:id"){
+                           it.json(billingService.handleInvoice(it.pathParam("id").toInt()))
+                       }
 
-
-
-                   // URL: /rest/v1/handlePendingInvoices
-                   get("handlependinginvoices"){
-                        billingService.handlePayments()
-                       it.json("done")
                    }
 
                    path("invoices") {
@@ -96,15 +95,23 @@ class AntaeusRest (
                            it.json(invoiceService.fetchAll())
                        }
 
-                       // URL: /rest/v1/invoices/pending
-                       get("pending"){
-                           it.json(invoiceService.fetchPending())
+                       // Endpoint to reset all the invoices in error to pending state
+                       // URL: /rest/v1/invoices/reseterrors
+                       get("reseterrors"){
+                           invoiceService.resetAllErrorsToPending()
+                           it.json(true)
                        }
 
+                       // URL: /rest/v1/invoices/status/{:status}
+                       get("status/:status"){
+                           it.json(invoiceService.fetchInvoicesByStatusStr(it.pathParam("status")))
+                       }
                        // URL: /rest/v1/invoices/{:id}
                        get(":id") {
                           it.json(invoiceService.fetch(it.pathParam("id").toInt()))
                        }
+
+
                    }
 
                    path("customers") {

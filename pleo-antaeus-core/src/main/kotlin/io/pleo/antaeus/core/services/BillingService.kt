@@ -31,7 +31,7 @@ import org.apache.logging.log4j.kotlin.Logging
  */
 class BillingService(
     private val paymentProvider: PaymentProvider, private val invoiceService: InvoiceService,
-        private val customerService: CustomerService, private val currencyService: CurrencyService) : Logging{
+    private val customerService: CustomerService, private val currencyService: CurrencyService) : Logging{
 
 
     private var invoiceCurrencyUpdatedCount = 0
@@ -151,7 +151,7 @@ class BillingService(
      * The function gets the invoices to handle (NETWORK_ERROR, ERROR, PENDING) and process each invoice by calling
      * processInvoice. This function also logs a resume of the actions that were done during the handling of the invoice.
      */
-    fun handlePayments(){
+    fun handlePayments() : List<Invoice>{
 
         logger.info("Entering the HandlePayments function")
 
@@ -171,6 +171,9 @@ class BillingService(
         //We create an empty list to store the invoices that weren't paid because of an issue and must be retried
         val invoicesToRetry = ArrayList<Invoice>()
 
+        //Another empty list, this time to contain all the invoices once modified. We will be returning this
+        val updatedInvoices = ArrayList<Invoice>()
+
         var result : Invoice?
 
         //We process each individual invoice
@@ -180,9 +183,11 @@ class BillingService(
             // it returns null if the transaction was a success, or it returns the Invoice element that we
             // need to retry on
             result = processInvoice(invoice)
-            if(result != null){
+            if(result.status == InvoiceStatus.NETWORK_ERROR){
                 invoicesToRetry.add(result)
             }
+            updatedInvoices.add(result)
+
         }
 
         logger.info ("**********************************************************************************************************")
@@ -211,6 +216,24 @@ class BillingService(
         logger.info("A total of $missingFundsInvoiceCountDiff invoices weren't paid because of low costumer balance.")
         logger.info("A total of $invoiceCurrencyUpdatedCount invoices had their currency updated to match the customer's currency")
 
+        return updatedInvoices
+
+    }
+
+    /**
+     * Public function to handle an individual invoice
+     *
+     * This will be used by the REST Api to handle invoices
+     *
+     */
+    fun handleInvoice(invoiceId: Int): Invoice
+    {
+        logger.info("Handling individual invoice. Id: $invoiceId")
+
+        val invoice = invoiceService.fetch(invoiceId)
+
+        return processInvoice(invoice)
+
     }
 
     /**
@@ -222,10 +245,13 @@ class BillingService(
      * @param invoice the invoice to handle
      * @return returns the invoice if we received a network error while processing it
      */
-    private fun processInvoice(invoice: Invoice): Invoice?{
+    private fun processInvoice(invoice: Invoice): Invoice{
 
         logger.debug{"Processing invoice: Id  ${invoice.id} customerId ${invoice.customerId} "+
                 "amount ${invoice.amount.value} currency ${invoice.amount.currency} Status ${invoice.status}"}
+
+        //If the invoice is already paid, we don't process it
+        if(invoice.status == InvoiceStatus.PAID) return invoice
 
         //First we get the customer
         val customer = customerService.fetch(invoice.customerId)
@@ -288,8 +314,8 @@ class BillingService(
 
         logger.debug("---------------------------------------------------------")
 
-        //We want to retry those that had network errors, so we return the invoice if it needs to be retried, otherwise we return null
-        return if ( status == InvoiceStatus.NETWORK_ERROR) updatedInvoice else null
+        //Return the latest version of the invoice.
+        return updatedInvoice
 
     }
 }

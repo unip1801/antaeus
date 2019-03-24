@@ -74,6 +74,18 @@ have several pay dates instead of just one (i.e. payments each week or each two 
  I also added some new routes in the API in order to start and stop the billing service thread, as well as get the status. 
  Normally this would be behind a protected API, but for the purpose of this POC the authentication is not needed.
 
+---
+
+Fifth working session - Sunday - 1h
+
+I decided to update the REST api in order to provide endpoints to process all the invoices or any individual invoice. 
+I also added an endpoint to reset the status of all invoices in error to pending.
+
+To do so, I had to refactor the BillingService in order to return the processed invoices, I also added a verification
+so we don't ever process invoices that were already paid.
+
+
+
 ## Antaeus
 
 Antaeus (/ænˈtiːəs/), in Greek mythology, a giant of Libya, the son of the sea god Poseidon and the Earth goddess Gaia. He compelled all strangers who were passing through the country to wrestle with him. Whenever Antaeus touched the Earth (his mother), his strength was renewed, so that even if thrown to the ground, he was invincible. Heracles, in combat with him, discovered the source of his strength and, lifting him up from Earth, crushed him to death.

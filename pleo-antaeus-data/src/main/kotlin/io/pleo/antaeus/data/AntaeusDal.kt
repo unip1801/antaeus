@@ -100,6 +100,17 @@ class AntaeusDal(private val db: Database) {
         }
     }
 
+    /**
+     * Function to change the status of all invoices in error to pending
+     */
+    fun resetAllInvoiceErrorsToPending(){
+        transaction(db){
+            InvoiceTable.update({(InvoiceTable.status neq "PENDING") and (InvoiceTable.status neq "PAID")}){
+                it[this.status] = InvoiceStatus.PENDING.toString()
+            }
+        }
+    }
+
     fun fetchCustomer(id: Int): Customer? {
         return transaction(db) {
             CustomerTable
