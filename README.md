@@ -105,7 +105,29 @@ new SchedulingService and also created the ReportService in order to handle the 
 
 Now all the services respect the separation of concerns, as their responsibilities are better defined.
 
+---
 
+Conclusion
+
+I believe it's now time to say enough, since I'm having too much fun and my stack of ideas on how to improve this is
+growing exponentially each time I touch the code.
+
+During this exercise I learnt lots of things about kotlin (which I didn't even know existed before!), exposed and gradle!
+(I'm used to maven and had only a little experience with gradle). I had really lots of fun, and I definitely see myself
+coding in kotlin on a regular basis.
+
+Here are some of the ideas that I had in my list, that I think would be nice to implement next:
+
+* Secure the API
+* Pull currency conversion data from external API	
+* Make payment hours configurable
+* Allow to have several payment intervals (once per week, each two weeks, the first of the month, etc)	
+* Take into account timezones for payment (we should not be chargin the 30/31th nor the 2nd, depending on timezones)
+* Threading for handling multiple invoices (For scalability purposes, if we had to handle 10.000 invoices, we should be multithreading!)
+* Send email/SMS from the ReportService to inform about errors
+* Create a table to store details related to invoice handling (errors that happened, log currency change, success, etc)
+
+It was a great pleasure to work on this little project!
 
 ## Antaeus
 
