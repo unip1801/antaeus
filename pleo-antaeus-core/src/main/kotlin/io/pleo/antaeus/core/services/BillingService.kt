@@ -4,10 +4,8 @@ import io.pleo.antaeus.core.exceptions.CurrencyMismatchException
 import io.pleo.antaeus.core.exceptions.CustomerNotFoundException
 import io.pleo.antaeus.core.exceptions.NetworkException
 import io.pleo.antaeus.core.external.PaymentProvider
-import io.pleo.antaeus.core.helpers.DateHelper
 import io.pleo.antaeus.models.Invoice
 import io.pleo.antaeus.models.InvoiceStatus
-import kotlinx.coroutines.*
 import org.apache.logging.log4j.kotlin.Logging
 import java.util.concurrent.locks.ReentrantLock
 
@@ -32,12 +30,9 @@ import java.util.concurrent.locks.ReentrantLock
  */
 class BillingService(
     private val paymentProvider: PaymentProvider, private val invoiceService: InvoiceService,
-    private val customerService: CustomerService, private val currencyService: CurrencyService) : Logging{
+    private val customerService: CustomerService, private val currencyService: CurrencyService,
+    private val reportService: ReportService) : Logging{
 
-
-    private var invoiceCurrencyUpdatedCount = 0
-    private var thread : Job? = null
-    private var threadShouldRun : Boolean = false
 
     //Since the BillingService is in a thread separate to the rest of the program, technically someone
     // could try to update an invoice through the REST API at the same time that the BillingService is working
@@ -46,112 +41,6 @@ class BillingService(
     // concurrent access errors.
     private val invoicesLock = ReentrantLock()
 
-
-    /**
-     * Function to start the BillingService thread.
-     *
-     * @return true if the thread was started, false if it was already started
-     */
-    fun start(): Boolean{
-
-        //We start the thread only if it's not already running
-        if(thread == null){
-            logger.info("Starting the Billing Service")
-
-            threadShouldRun = true
-
-            thread = GlobalScope.launch {
-                main()
-            }
-
-            return true
-
-        }else{
-            logger.info("Cannot start the billing service - It is already running")
-            return false
-        }
-
-    }
-
-    /**
-     * Function to stop the processing of the current thread
-     *
-     * @return true if we stopped the thread, false if the thread was already stopped
-     */
-    fun stop() : Boolean {
-
-        if(thread == null){
-            return false
-        }
-
-
-        logger.info("About to stop the thread")
-
-
-        threadShouldRun = false
-
-        //Cancel the thread and join it with the main thread
-        thread?.cancel()
-        runBlocking {
-            thread?.join()
-        }
-
-        thread = null
-
-        logger.info("Billing service has been stopped")
-
-        return true
-    }
-
-    /**
-     * Returns true if the thread is running - Return false if not.
-     */
-    fun status() = (thread != null)
-
-
-    /**
-     * This is the function being run by the thread, so it must never end unless we want to stop the thread
-     *
-     *
-     */
-    private suspend fun main(){
-
-        var delayToFirstOfNextMonth: Long
-
-        //We continue to execute the function unless we want to stop the thread
-        while(threadShouldRun()){
-            logger.info("Loop - BillingService.Main")
-
-            //We handle the invoices only if we're on the first of the month
-            if(DateHelper.isFirstOfTheMonth()){
-                logger.info("We are the first of the month - Processing invoices")
-                handlePayments()
-            }
-
-            //How much seconds we need to sleep until first day of next month
-            delayToFirstOfNextMonth = DateHelper.msUntilFirstOfNextMonth()
-
-            logger.info("Next payment date: ${DateHelper.firstOfNextMonth()}")
-            logger.info("Milliseconds to sleep until next first of the month: $delayToFirstOfNextMonth")
-            logger.info("Putting thread to sleep - Good night!")
-
-            //Put the thread to sleep
-            delay(delayToFirstOfNextMonth)
-
-        }
-
-    }
-
-
-    /**
-     * Returns true if the thread should continue running or false if it should end its infinite loop
-     *
-     * Note: We use a function here instead of directly accessing the attribute threadShouldRun as
-     * the logic for this could potentially grow into something more complex than a simple attribute
-     */
-    private fun threadShouldRun(): Boolean{
-        return threadShouldRun
-    }
 
     /**
      * This function handles the payment of the invoices.
@@ -167,18 +56,12 @@ class BillingService(
         invoicesLock.lock()
         logger.info("Got the invoice lock")
 
-        //Get the invoice counts before, so we can do the diff at the end
-        val allInvoicesCount = invoiceService.getAllInvoicesCount()
-        val paidInvoiceCount = invoiceService.getPaidInvoicesCount()
-        val missingFundsInvoiceCount = invoiceService.getMissingFundsInvoicesCount()
-
-        logger.info("There's a total of $allInvoicesCount invoices on the system")
-
+        //We initialize the report service
+        reportService.initialize()
 
         //First we get all the pending invoices
         val pendingInvoices = invoiceService.fetchInvoicesToHandle()
-        val newPendingInvoices = pendingInvoices.count()
-        logger.info{"Got the pending invoices. Count: $newPendingInvoices"}
+        logger.info{"Got the pending invoices. Count: ${pendingInvoices.count()}"}
 
         //We create an empty list to store the invoices that weren't paid because of an issue and must be retried
         val invoicesToRetry = ArrayList<Invoice>()
@@ -197,8 +80,10 @@ class BillingService(
             result = processInvoice(invoice)
             if(result.status == InvoiceStatus.NETWORK_ERROR){
                 invoicesToRetry.add(result)
+                reportService.increaseNetworkErrorCount()
             }
             updatedInvoices.add(result)
+            reportService.addInvoice(result)
 
         }
 
@@ -208,26 +93,11 @@ class BillingService(
 
         //We Retry those invoice transactions that failed before.
         for(invoice in invoicesToRetry) {
-            processInvoice(invoice)
+            result = processInvoice(invoice)
+            reportService.addInvoice(result)
         }
 
-        //Get counts again, calculate diff
-        val paidInvoiceCountDiff = invoiceService.getPaidInvoicesCount() - paidInvoiceCount
-        val networkErrorInvoiceCount = invoicesToRetry.count()
-        val networkErrorInvoiceCountFinal =  invoiceService.getNetworkErrorInvoicesCount()
-        val errorInvoiceCount = invoiceService.getErrorInvoicesCount()
-        val missingFundsInvoiceCountDiff = invoiceService.getMissingFundsInvoicesCount() - missingFundsInvoiceCount
-
-        logger.info ("**********************************************************************************************************")
-        logger.info("Finished 2nd run of invoice handling. Here are the final numbers:")
-        logger.info("We handled a total of $newPendingInvoices invoices.")
-        logger.info("A total of $paidInvoiceCountDiff were paid")
-        logger.info("A total of $networkErrorInvoiceCount invoices had network errors while processing and were retried."
-                        +" ($networkErrorInvoiceCountFinal of them had network issues again during retry)")
-        logger.info("A total of $errorInvoiceCount invoices had consumer or currency errors while processing.")
-        logger.info("A total of $missingFundsInvoiceCountDiff invoices weren't paid because of low costumer balance.")
-        logger.info("A total of $invoiceCurrencyUpdatedCount invoices had their currency updated to match the customer's currency")
-
+        reportService.debugReport()
 
         invoicesLock.unlock()
         logger.debug("Unlocked the invoice lock")
@@ -284,7 +154,7 @@ class BillingService(
         if(customer.currency != invoice.amount.currency){
             logger.debug("*** Currency mismatch - Customer is in ${customer.currency} and the invoice in ${invoice.amount.currency}")
             localInvoice = currencyService.invoiceCurrencyConversion(invoice,customer.currency)
-            invoiceCurrencyUpdatedCount++
+            reportService.increaseCurrencyUpdateCount()
         } else{
             logger.debug("*** Currency validation successful")
             localInvoice = invoice

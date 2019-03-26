@@ -11,6 +11,7 @@ import io.pleo.antaeus.core.exceptions.EntityNotFoundException
 import io.pleo.antaeus.core.services.BillingService
 import io.pleo.antaeus.core.services.CustomerService
 import io.pleo.antaeus.core.services.InvoiceService
+import io.pleo.antaeus.core.services.SchedulingService
 import io.pleo.antaeus.models.InvoiceStatus
 import mu.KotlinLogging
 
@@ -19,7 +20,8 @@ private val logger = KotlinLogging.logger {}
 class AntaeusRest (
     private val invoiceService: InvoiceService,
     private val customerService: CustomerService,
-    private val billingService: BillingService
+    private val billingService: BillingService,
+    private val schedulingService: SchedulingService
 ) : Runnable {
 
     override fun run() {
@@ -57,24 +59,6 @@ class AntaeusRest (
 
                    path("billingservice") {
 
-                       // Endpoint to start the billingservice thread
-                       // URL: /rest/v1/billingservice/start
-                       get("start"){
-                           it.json(billingService.start())
-                       }
-
-                       // Endpoint to stop the billingservice thread
-                       // URL: /rest/v1/billingservice/stop
-                       get("stop"){
-                           it.json( billingService.stop())
-                       }
-
-                       // Endpoint to get the billingservice thread status
-                       // URL: /rest/v1/billingservice/status
-                       get("status"){
-                           it.json(billingService.status())
-                       }
-
                        // Endpoint to force invoice handling even if we're not the first of the month
                        // URL: /rest/v1/billingservice/invoicehandling
                        get("payallinvoices"){
@@ -87,6 +71,26 @@ class AntaeusRest (
                            it.json(billingService.handleInvoice(it.pathParam("id").toInt()))
                        }
 
+                   }
+
+                   path("schedulingservice"){
+                       // Endpoint to start the schedulingservice thread
+                       // URL: /rest/v1/schedulingservice/start
+                       get("start"){
+                           it.json(schedulingService.start())
+                       }
+
+                       // Endpoint to stop the schedulingservice thread
+                       // URL: /rest/v1/schedulingservice/stop
+                       get("stop"){
+                           it.json( schedulingService.stop())
+                       }
+
+                       // Endpoint to get the schedulingservice thread status
+                       // URL: /rest/v1/schedulingservice/status
+                       get("status"){
+                           it.json(schedulingService.status())
+                       }
                    }
 
                    path("invoices") {

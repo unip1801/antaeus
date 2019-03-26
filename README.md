@@ -96,6 +96,14 @@ In order to prevent the problem, I used a lock on the BillingService. The implem
 however it wouldn't be scalable for systems where there are tenths of thousands of invoices being handled on the same day. 
 In that case, we should implement a lock that locks each invoice instead of locking all the invoices.
 
+---
+
+Seventh working session - Monday - 2h
+
+I decided to refactor the Billing Service as it got very crowded. I extracted the scheduling portion into the 
+new SchedulingService and also created the ReportService in order to handle the logging for the batch operations.
+
+Now all the services respect the separation of concerns, as their responsibilities are better defined.
 
 
 
